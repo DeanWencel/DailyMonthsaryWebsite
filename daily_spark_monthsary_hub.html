@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthsary Hub 💕</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cosmicBg: '#0f0a1c',
+                        violetDark: '#1b1130',
+                        roseGold: '#e8a598',
+                        blushPink: '#ffb3c6',
+                        softLavender: '#d8b4fe',
+                        glowingGold: '#fbbf24'
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'serif'],
+                        cursive: ['Dancing Script', 'cursive'],
+                        sans: ['Outfit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f0a1c; }
+        ::-webkit-scrollbar-thumb { background: #4c1d95; border-radius: 4px; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 12px rgba(255, 179, 198, 0.6), 0 0 24px rgba(232, 165, 152, 0.4);
+        }
+
+        .btn-shimmer {
+            background: linear-gradient(135deg, #e8a598 0%, #ffb3c6 50%, #f472b6 100%);
+            background-size: 200% 200%;
+            animation: shimmerGradient 4s ease infinite;
+        }
+        @keyframes shimmerGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .profile-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .profile-card:hover {
+            transform: translateY(-4px);
+        }
+        .profile-card.selected {
+            border-color: #e8a598;
+            background: rgba(232, 165, 152, 0.15);
+            box-shadow: 0 0 20px rgba(232, 165, 152, 0.3);
+        }
+
+        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+    </style>
+</head>
+<body class="bg-cosmicBg text-slate-100 font-sans min-h-screen overflow-x-hidden relative selection:bg-roseGold selection:text-violetDark">
+
+    <!-- Ambient Starfield Canvas -->
+    <canvas id="starfieldCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Floating Top Bar -->
+    <div class="fixed top-4 right-4 left-4 z-50 flex justify-between items-center pointer-events-none">
+        <div class="pointer-events-auto glass-card px-3 py-1.5 rounded-full flex items-center gap-2 text-xs">
+            <span id="connDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="connStatusText" class="text-slate-300 font-medium">Local Storage Sync</span>
+            <button onclick="switchUserRole()" class="ml-1 text-roseGold underline hover:text-white">Switch Profile</button>
+        </div>
+
+        <div class="pointer-events-auto glass-card px-4 py-2 rounded-full flex items-center gap-3 text-xs md:text-sm text-roseGold shadow-lg">
+            <button onclick="toggleAudio()" class="hover:text-white transition-all flex items-center gap-2 focus:outline-none">
+                <i id="musicIcon" class="fa-solid fa-music text-roseGold"></i>
+                <span id="musicStatusText">Play Music</span>
+            </button>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.3" oninput="changeVolume(this.value)" class="w-16 accent-roseGold cursor-pointer">
+        </div>
+    </div>
+
+    <!-- Calm Ambient Piano Audio Track -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/11/06/audio_c97690fa8b.mp3?filename=soft-relaxing-piano-126237.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- LANDING SCREEN WITH PROFILE SELECTION -->
+    <div id="landingScreen" class="fixed inset-0 z-40 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-cosmicBg via-violetDark to-cosmicBg transition-all duration-1000">
+        <div class="relative z-10 max-w-md mx-auto space-y-6">
+            <div class="inline-block p-4 rounded-full bg-violet-900/40 border border-roseGold/30 mb-2">
+                <i class="fa-solid fa-heart-pulse text-4xl md:text-5xl text-roseGold glow-text"></i>
+            </div>
+            
+            <h1 class="font-serif text-3xl md:text-5xl font-bold tracking-wide text-white glow-text">
+                Love
+            </h1>
+            <p class="font-cursive text-xl md:text-2xl text-blushPink">
+                "A Place For Us"
+            </p>
+
+            <!-- User Selector Grid -->
+            <div class="space-y-3 text-left">
+                <label class="text-xs text-roseGold font-medium block text-center uppercase tracking-wider">Who is logging in today?</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <div id="selectDeanCard" onclick="selectUser('Dean')" class="profile-card selected cursor-pointer glass-card p-4 rounded-2xl text-center space-y-2 border border-white/10">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold text-lg border border-blue-400/40">
+                            💙
+                        </div>
+                        <span class="block font-semibold text-sm text-white">Dean</span>
+                    </div>
+
+                    <div id="selectPhoebeCard" onclick="selectUser('Phoebe')" class="profile-card cursor-pointer glass-card p-4 rounded-2xl text-center space-y-2 border border-white/10">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-pink-500/20 text-pink-300 flex items-center justify-center font-bold text-lg border border-pink-400/40">
+                            🩷
+                        </div>
+                        <span class="block font-semibold text-sm text-white">Phoebe</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="unlockApp()" class="w-full btn-shimmer text-slate-900 font-semibold px-8 py-4 rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 text-base mt-4">
+                <i class="fa-solid fa-sparkles"></i>
+                <span id="enterBtnText">Enter Sanctuary as Dean</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div id="mainApp" class="relative z-10 min-h-screen flex flex-col justify-between hidden opacity-0 transition-opacity duration-1000 pt-16">
+        
+        <!-- HEADER & LIVE COUNTER -->
+        <header class="pt-4 pb-2 text-center px-4 max-w-3xl mx-auto w-full">
+            <h2 id="coupleTitle" class="font-cursive text-3xl md:text-4xl text-roseGold glow-text">Dean & Phoebe</h2>
+            <p class="text-xs uppercase tracking-widest text-slate-400 mt-1">Time Spent Loving Each Other</p>
+            
+            <!-- Live Time Counter -->
+            <div class="grid grid-cols-4 gap-2 md:gap-4 mt-4 glass-card p-4 rounded-2xl border-roseGold/20">
+                <div><span id="countDays" class="block font-serif text-2xl md:text-4xl font-bold text-roseGold glow-text">0</span><span class="text-[10px] md:text-xs text-slate-300">Days</span></div>
+                <div><span id="countHours" class="block font-serif text-2xl md:text-4xl font-bold text-blushPink glow-text">0</span><span class="text-[10px] md:text-xs text-slate-300">Hours</span></div>
+                <div><span id="countMinutes" class="block font-serif text-2xl md:text-4xl font-bold text-softLavender glow-text">0</span><span class="text-[10px] md:text-xs text-slate-300">Mins</span></div>
+                <div><span id="countSeconds" class="block font-serif text-2xl md:text-4xl font-bold text-glowingGold glow-gold">0</span><span class="text-[10px] md:text-xs text-slate-300">Secs</span></div>
+            </div>
+
+            <!-- Partner Live Mood Display Banner -->
+            <div class="mt-4 glass-card p-3 rounded-2xl flex items-center justify-between border-blushPink/30">
+                <div class="flex items-center gap-2 text-left">
+                    <span class="text-xl" id="partnerMoodEmoji">💖</span>
+                    <div>
+                        <span id="partnerMoodName" class="text-xs font-bold text-blushPink block">Partner's Current Mood:</span>
+                        <span id="partnerMoodStatus" class="text-xs text-slate-200">Missing you extra 💖</span>
+                    </div>
+                </div>
+                <span class="text-[10px] text-slate-400 bg-white/5 px-2 py-1 rounded-full">Live Partner Status</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="max-w-3xl mx-auto w-full px-4 my-4">
+            <div class="glass-card p-1.5 rounded-2xl flex justify-around items-center gap-1">
+                <button onclick="switchTab('daily-q')" id="tab-daily-q" class="tab-btn flex-1 py-2 px-2 rounded-xl text-xs font-medium text-white bg-white/10 flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-comments text-roseGold"></i> <span>Daily Spark</span>
+                </button>
+                <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn flex-1 py-2 px-2 rounded-xl text-xs font-medium text-slate-300 flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-pen-fancy text-roseGold"></i> <span>Daily Notes</span>
+                </button>
+                <button onclick="switchTab('mood')" id="tab-mood" class="tab-btn flex-1 py-2 px-2 rounded-xl text-xs font-medium text-slate-300 flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-face-smile-heart text-roseGold"></i> <span>Mood & Hug</span>
+                </button>
+            </div>
+        </nav>
+
+        <main class="max-w-3xl mx-auto w-full px-4 py-2 flex-grow">
+
+            <!-- DAILY FEATURE 1: DUAL ANSWER QUESTION OF THE DAY -->
+            <section id="content-daily-q" class="tab-content active space-y-6">
+                <div class="glass-card p-6 rounded-3xl text-center space-y-4">
+                    <div class="inline-block px-3 py-1 rounded-full bg-roseGold/20 text-roseGold text-xs font-semibold uppercase tracking-wider">
+                        ✨ Question of the Day
+                    </div>
+                    <h3 id="dailyQuestionText" class="font-serif text-xl md:text-2xl font-bold text-white">
+                        "What is your favorite tiny detail about our love story?"
+                    </h3>
+                    <p class="text-[11px] text-slate-400 italic">🔒 Answers are hidden until both of you submit your response!</p>
+                    
+                    <div id="answerFormArea" class="space-y-4 pt-2 text-left">
+                        <div>
+                            <label id="myAnswerLabel" class="text-xs text-roseGold font-medium block mb-1">Your Answer:</label>
+                            <textarea id="myAnswerInput" rows="3" placeholder="Write your heart out..." class="w-full bg-white/5 border border-white/20 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-roseGold"></textarea>
+                        </div>
+                        <button id="submitAnswerBtn" onclick="submitAnswer()" class="w-full btn-shimmer text-slate-900 font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-paper-plane text-xs"></i> <span>Submit My Answer</span>
+                        </button>
+                    </div>
+
+                    <!-- Side-by-Side Dual Answers -->
+                    <div id="revealedAnswersArea" class="pt-4 border-t border-white/10 space-y-4 text-left">
+                        <h4 class="text-xs font-semibold text-roseGold uppercase tracking-wider text-center">Today's Shared Answers</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- User 1 Answer Card -->
+                            <div class="glass-card p-4 rounded-xl border-roseGold/30 relative">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span id="nameLabel1" class="text-xs font-bold text-roseGold">Your Answer:</span>
+                                    <span id="statusBadge1" class="text-[10px] bg-roseGold/20 text-roseGold px-2 py-0.5 rounded-full">Waiting...</span>
+                                </div>
+                                <p id="answerText1" class="text-sm text-slate-300 italic">No answer submitted yet.</p>
+                            </div>
+
+                            <!-- User 2 Answer Card (Locked until BOTH submit) -->
+                            <div class="glass-card p-4 rounded-xl border-blushPink/30 relative overflow-hidden">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span id="nameLabel2" class="text-xs font-bold text-blushPink">Partner's Answer:</span>
+                                    <span id="statusBadge2" class="text-[10px] bg-blushPink/20 text-blushPink px-2 py-0.5 rounded-full">Waiting...</span>
+                                </div>
+                                
+                                <div id="partnerAnswerContainer" class="relative min-h-[50px]">
+                                    <p id="answerText2" class="text-sm text-slate-300 italic filter blur-md select-none transition-all duration-300">Hidden answer preview placeholder text text text</p>
+                                    
+                                    <div id="lockOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-violetDark/90 rounded text-center p-2">
+                                        <i class="fa-solid fa-lock text-roseGold text-lg mb-1"></i>
+                                        <span id="lockOverlayText" class="text-xs text-roseGold font-medium">Both must submit to reveal answers</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Past Question Vault Button -->
+                    <div class="pt-2">
+                        <button onclick="toggleQVault()" class="text-xs text-roseGold underline hover:text-white transition-all">
+                            📜 View Past Shared Q&A Answers
+                        </button>
+                    </div>
+
+                    <div id="qVaultList" class="hidden glass-card p-4 rounded-2xl space-y-3 text-left border-roseGold/20 text-xs">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- DAILY FEATURE 2: DUAL LOVE NOTES EXCHANGE -->
+            <section id="content-notes" class="tab-content space-y-6">
+                <div class="glass-card p-6 md:p-8 rounded-3xl text-center space-y-6">
+                    <div class="inline-block px-3 py-1 rounded-full bg-roseGold/20 text-roseGold text-xs font-semibold uppercase tracking-wider">
+                        💌 Today's Mutual Love Notes
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                        <!-- My Note Writing Card -->
+                        <div class="glass-card p-5 rounded-2xl border-roseGold/30 space-y-3">
+                            <span id="myNoteHeader" class="text-xs font-bold text-roseGold block">Your Daily Note:</span>
+                            
+                            <div id="noteFormContainer" class="space-y-3">
+                                <textarea id="myDailyNoteInput" rows="4" placeholder="Write a cute note for today..." class="w-full bg-white/5 border border-white/20 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-roseGold"></textarea>
+                                <button onclick="saveDailyNote()" class="w-full btn-shimmer text-slate-900 font-semibold py-2 rounded-xl text-xs">
+                                    Send Daily Note
+                                </button>
+                            </div>
+
+                            <!-- Displayed if note already sent -->
+                            <div id="noteSentNotice" class="hidden p-4 bg-white/5 border border-emerald-500/30 rounded-xl space-y-2">
+                                <div class="flex items-center gap-2 text-emerald-300 text-xs font-semibold">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>Note Sent For Today!</span>
+                                </div>
+                                <p id="mySubmittedNoteText" class="font-cursive text-lg text-roseGold italic break-words"></p>
+                                <p class="text-[10px] text-slate-400">You have already submitted a note today. Log back in tomorrow to send a new note!</p>
+                            </div>
+                        </div>
+
+                        <!-- Partner Note Display Card -->
+                        <div class="glass-card p-5 rounded-2xl border-blushPink/30 space-y-3 relative">
+                            <span id="partnerNoteHeader" class="text-xs font-bold text-blushPink block">Partner's Note to You:</span>
+                            <div class="p-3 bg-white/5 rounded-xl min-h-[120px] flex items-center justify-center">
+                                <p id="partnerDailyNoteText" class="font-cursive text-xl text-blushPink text-center">
+                                    "Waiting for her daily note..."
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DAILY FEATURE 3: DAILY MOOD & INSTANT HUG METER -->
+            <section id="content-mood" class="tab-content space-y-6">
+                <div class="glass-card p-6 rounded-3xl text-center space-y-6">
+                    <div>
+                        <h3 class="font-serif text-2xl font-bold text-white">Daily Mood Check-in</h3>
+                        <p class="text-xs text-slate-300 mt-1">Let your partner know how you're feeling today!</p>
+                    </div>
+
+                    <!-- Mood Selection Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="setMood('Needs a hug 🫂')" class="glass-card p-4 rounded-xl hover:border-roseGold/60 transition-all flex flex-col items-center gap-2">
+                            <span class="text-2xl">🫂</span>
+                            <span class="text-xs text-slate-200">Needs Hug</span>
+                        </button>
+                        <button onclick="setMood('On top of the world 🌟')" class="glass-card p-4 rounded-xl hover:border-roseGold/60 transition-all flex flex-col items-center gap-2">
+                            <span class="text-2xl">🌟</span>
+                            <span class="text-xs text-slate-200">Super Happy</span>
+                        </button>
+                        <button onclick="setMood('Cozy & lazy ☕')" class="glass-card p-4 rounded-xl hover:border-roseGold/60 transition-all flex flex-col items-center gap-2">
+                            <span class="text-2xl">☕</span>
+                            <span class="text-xs text-slate-200">Cozy & Lazy</span>
+                        </button>
+                        <button onclick="setMood('Missing you extra 💖')" class="glass-card p-4 rounded-xl hover:border-roseGold/60 transition-all flex flex-col items-center gap-2">
+                            <span class="text-2xl">💖</span>
+                            <span class="text-xs text-slate-200">Missing You</span>
+                        </button>
+                    </div>
+
+                    <div class="pt-4 border-t border-white/10 space-y-4">
+                        <h4 class="text-xs font-semibold text-roseGold uppercase tracking-wider">Instant Hug & Kiss Broadcast</h4>
+                        <div class="flex justify-center gap-4">
+                            <button onclick="sendInstantBurst('hug')" class="btn-shimmer text-slate-900 font-semibold px-6 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg">
+                                <span>Send Virtual Hug</span> 🫂
+                            </button>
+                            <button onclick="sendInstantBurst('kiss')" class="btn-shimmer text-slate-900 font-semibold px-6 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg">
+                                <span>Send Instant Kiss</span> 💋
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="py-4 text-center text-xs text-slate-400">
+        </footer>
+    </div>
+
+    <script>
+        const START_DATE = new Date("2023-11-15T00:00:00");
+        let activeUser = "Dean"; 
+        let partnerUser = "Phoebe";
+        let isPlayingMusic = false;
+
+        // Data Storage Schema
+        let appData = {
+            Dean: { answer: "", note: "", mood: "Missing you extra 💖" },
+            Phoebe: { answer: "", note: "", mood: "Missing you extra 💖" },
+            qaHistory: []
+        };
+
+        // Initialize Local Storage on Load
+        function loadSavedData() {
+            const saved = localStorage.getItem("sanctuary_data");
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch(e) { console.error("Could not parse saved data", e); }
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem("sanctuary_data", JSON.stringify(appData));
+        }
+
+        function selectUser(userName) {
+            activeUser = userName;
+            partnerUser = userName === "Dean" ? "Phoebe" : "Dean";
+
+            document.getElementById('selectDeanCard').classList.toggle('selected', userName === 'Dean');
+            document.getElementById('selectPhoebeCard').classList.toggle('selected', userName === 'Phoebe');
+            document.getElementById('enterBtnText').innerText = `Enter Sanctuary as ${userName}`;
+        }
+
+        function switchUserRole() {
+            document.getElementById('mainApp').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('landingScreen').classList.remove('hidden');
+            }, 300);
+        }
+
+        // Real-Time System Broadcast
+        let broadcastChannel = new BroadcastChannel("daily_couples_sanctuary");
+
+        broadcastChannel.onmessage = (e) => {
+            loadSavedData();
+            updateAppUI();
+            if (e.data && e.data.type === 'burst') triggerBurstFX();
+        };
+
+        function toggleAudio() {
+            const audio = document.getElementById('bgMusic');
+            const musicIcon = document.getElementById('musicIcon');
+            const musicStatusText = document.getElementById('musicStatusText');
+
+            if (isPlayingMusic) {
+                audio.pause();
+                musicIcon.className = "fa-solid fa-music text-roseGold";
+                musicStatusText.innerText = "Play Music";
+                isPlayingMusic = false;
+            } else {
+                audio.play().then(() => {
+                    musicIcon.className = "fa-solid fa-pause text-roseGold animate-spin";
+                    musicStatusText.innerText = "Playing";
+                    isPlayingMusic = true;
+                }).catch(err => console.log("Playback interaction required: ", err));
+            }
+        }
+
+        function changeVolume(val) {
+            const audio = document.getElementById('bgMusic');
+            audio.volume = val;
+        }
+
+        function unlockApp() {
+            loadSavedData();
+
+            document.getElementById('coupleTitle').innerText = "Dean & Phoebe";
+            document.getElementById('nameLabel1').innerText = `${activeUser}'s Answer:`;
+            document.getElementById('nameLabel2').innerText = `${partnerUser}'s Answer:`;
+            document.getElementById('partnerMoodName').innerText = `${partnerUser}'s Current Mood:`;
+            document.getElementById('myNoteHeader').innerText = `Your Daily Note to ${partnerUser}:`;
+            document.getElementById('partnerNoteHeader').innerText = `${partnerUser}'s Note to You:`;
+
+            document.getElementById('landingScreen').classList.add('hidden');
+            const mainApp = document.getElementById('mainApp');
+            mainApp.classList.remove('hidden');
+            setTimeout(() => mainApp.classList.remove('opacity-0'), 50);
+
+            updateAppUI();
+            updateCounter();
+            setInterval(updateCounter, 1000);
+        }
+
+        function updateAppUI() {
+            const myInfo = appData[activeUser] || { answer: "", note: "", mood: "" };
+            const partnerInfo = appData[partnerUser] || { answer: "", note: "", mood: "" };
+
+            // 1. Update Notes State & Lock behavior
+            const noteInput = document.getElementById('myDailyNoteInput');
+            const noteFormContainer = document.getElementById('noteFormContainer');
+            const noteSentNotice = document.getElementById('noteSentNotice');
+            const mySubmittedNoteText = document.getElementById('mySubmittedNoteText');
+
+            if (myInfo.note && myInfo.note.trim() !== "") {
+                noteFormContainer.classList.add('hidden');
+                noteSentNotice.classList.remove('hidden');
+                mySubmittedNoteText.innerText = `"${myInfo.note}"`;
+            } else {
+                noteFormContainer.classList.remove('hidden');
+                noteSentNotice.classList.add('hidden');
+                noteInput.value = "";
+            }
+
+            document.getElementById('partnerDailyNoteText').innerText = partnerInfo.note ? `"${partnerInfo.note}"` : `Waiting for ${partnerUser}'s daily note...`;
+
+            // 2. Update Mood State
+            document.getElementById('partnerMoodStatus').innerText = partnerInfo.mood || "Missing you extra 💖";
+
+            // 3. Update Daily Spark QA
+            updateQADisplay(myInfo.answer, partnerInfo.answer);
+            renderQVault();
+        }
+
+        function submitAnswer() {
+            const input = document.getElementById('myAnswerInput');
+            if (!input.value.trim()) return;
+            
+            appData[activeUser].answer = input.value.trim();
+            saveData();
+            broadcastChannel.postMessage({ type: 'sync' });
+            updateAppUI();
+        }
+
+        function updateQADisplay(myAns, partnerAns) {
+            // User 1 Status
+            if (myAns) {
+                document.getElementById('answerText1').innerText = `"${myAns}"`;
+                document.getElementById('statusBadge1').innerText = "Submitted";
+                document.getElementById('statusBadge1').className = "text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full";
+            } else {
+                document.getElementById('answerText1').innerText = "No answer submitted yet.";
+                document.getElementById('statusBadge1').innerText = "Waiting...";
+                document.getElementById('statusBadge1').className = "text-[10px] bg-roseGold/20 text-roseGold px-2 py-0.5 rounded-full";
+            }
+
+            // User 2 Status
+            if (partnerAns) {
+                document.getElementById('statusBadge2').innerText = "Submitted";
+                document.getElementById('statusBadge2').className = "text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full";
+            } else {
+                document.getElementById('statusBadge2').innerText = "Waiting...";
+                document.getElementById('statusBadge2').className = "text-[10px] bg-blushPink/20 text-blushPink px-2 py-0.5 rounded-full";
+            }
+
+            const answerElem2 = document.getElementById('answerText2');
+            const overlay = document.getElementById('lockOverlay');
+            const overlayText = document.getElementById('lockOverlayText');
+
+            if (myAns && partnerAns) {
+                answerElem2.innerText = `"${partnerAns}"`;
+                answerElem2.classList.remove('blur-md', 'select-none');
+                overlay.classList.add('hidden');
+                saveToHistory(myAns, partnerAns);
+            } 
+            else if (myAns && !partnerAns) {
+                answerElem2.classList.add('blur-md', 'select-none');
+                overlay.classList.remove('hidden');
+                overlayText.innerText = `Waiting for ${partnerUser} to answer...`;
+            } 
+            else if (!myAns && partnerAns) {
+                answerElem2.classList.add('blur-md', 'select-none');
+                overlay.classList.remove('hidden');
+                overlayText.innerText = `Submit your answer to reveal ${partnerUser}'s response!`;
+            } 
+            else {
+                answerElem2.classList.add('blur-md', 'select-none');
+                overlay.classList.remove('hidden');
+                overlayText.innerText = "Both must submit to reveal answers";
+            }
+        }
+
+        function saveToHistory(myAns, partnerAns) {
+            const todayQ = document.getElementById('dailyQuestionText').innerText;
+            if (!appData.qaHistory.some(item => item.question === todayQ)) {
+                appData.qaHistory.unshift({
+                    question: todayQ,
+                    deanAns: activeUser === 'Dean' ? myAns : partnerAns,
+                    phoebeAns: activeUser === 'Phoebe' ? myAns : partnerAns,
+                    date: new Date().toLocaleDateString()
+                });
+                saveData();
+            }
+        }
+
+        function renderQVault() {
+            const vaultContainer = document.getElementById('qVaultList');
+            const history = appData.qaHistory || [];
+
+            if (history.length === 0) {
+                vaultContainer.innerHTML = `
+                    <div class="text-center py-4 text-slate-400">
+                        <i class="fa-solid fa-box-open text-2xl mb-2 text-roseGold/60"></i>
+                        <p class="text-xs">No past Q&A memories saved yet!</p>
+                        <p class="text-[10px] text-slate-500 mt-0.5">Answer today's question together to save your first memory.</p>
+                    </div>`;
+            } else {
+                vaultContainer.innerHTML = history.map(item => `
+                    <div class="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
+                        <div class="flex justify-between text-[10px] text-roseGold font-semibold">
+                            <span>${item.question}</span>
+                            <span class="text-slate-400">${item.date}</span>
+                        </div>
+                        <p class="text-slate-300"><strong>Dean:</strong> "${item.deanAns}"</p>
+                        <p class="text-slate-300"><strong>Phoebe:</strong> "${item.phoebeAns}"</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function toggleQVault() {
+            document.getElementById('qVaultList').classList.toggle('hidden');
+        }
+
+        function saveDailyNote() {
+            const input = document.getElementById('myDailyNoteInput');
+            if (!input.value.trim()) return;
+
+            appData[activeUser].note = input.value.trim();
+            saveData();
+            broadcastChannel.postMessage({ type: 'sync' });
+            confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
+            updateAppUI();
+        }
+
+        function setMood(mood) {
+            appData[activeUser].mood = mood;
+            saveData();
+            broadcastChannel.postMessage({ type: 'sync' });
+            triggerBurstFX();
+            updateAppUI();
+        }
+
+        function sendInstantBurst(type) {
+            triggerBurstFX();
+            broadcastChannel.postMessage({ type: 'burst' });
+        }
+
+        function triggerBurstFX() {
+            confetti({ particleCount: 50, spread: 80, origin: { y: 0.5 } });
+        }
+
+        function updateCounter() {
+            const diff = new Date() - START_DATE;
+            if (diff < 0) return;
+            document.getElementById('countDays').innerText = Math.floor(diff / (1014 * 60 * 60 * 24));
+            document.getElementById('countHours').innerText = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            document.getElementById('countMinutes').innerText = Math.floor((diff / (1000 * 60)) % 60);
+            document.getElementById('countSeconds').innerText = Math.floor((diff / 1000) % 60);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white/10', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+            document.getElementById(`content-${tabId}`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('bg-white/10', 'text-white');
+        }
+
+        // Starfield background
+        const starCanvas = document.getElementById('starfieldCanvas');
+        const starCtx = starCanvas.getContext('2d');
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+    </script>
+</body>
+</html>
