@@ -490,7 +490,16 @@
             document.getElementById('partnerDailyNoteText').innerText = partnerInfo.note ? `"${partnerInfo.note}"` : `Waiting for ${partnerUser}'s daily note...`;
 
             // 2. Update Mood State
-            document.getElementById('partnerMoodStatus').innerText = partnerInfo.mood || "Missing you extra 💖";
+            const partnerMoodText = partnerInfo.mood || "Missing you extra 💖";
+            document.getElementById('partnerMoodStatus').innerText = partnerMoodText;
+            
+            // Extract the emoji (first character/symbol) to display in the circle icon
+            const extractedEmoji = partnerMoodText.match(/\p{Extended_Pictographic}/u);
+            if (extractedEmoji) {
+                document.getElementById('partnerMoodEmoji').innerText = extractedEmoji[0];
+            } else {
+                document.getElementById('partnerMoodEmoji').innerText = "💖";
+            }
 
             // 3. Update Daily Spark QA
             updateQADisplay(myInfo.answer, partnerInfo.answer);
@@ -611,18 +620,25 @@
 
         function setMood(mood) {
             if (!appData[activeUser]) appData[activeUser] = {};
+    
+            // Extracts the emoji and full text string
             appData[activeUser].mood = mood;
+    
+            // Save to Firebase
             pushDataToCloud();
+    
+            // Trigger confetti animation on your screen
             sendInstantBurst('mood');
         }
 
-        function sendInstantBurst(type) {
-            db.ref("realtime_burst").set({
-                type: type,
-                sender: activeUser,
-                timestamp: Date.now()
-            });
-        }
+            function sendInstantBurst(type) {
+        // Send real-time burst event to Firebase
+        db.ref("realtime_burst").set({
+            type: type,
+            sender: activeUser,
+            timestamp: Date.now()
+        });
+    }
 
         function triggerBurstFX() {
             confetti({ particleCount: 50, spread: 80, origin: { y: 0.5 } });
