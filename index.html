@@ -107,9 +107,24 @@
         </div>
     </div>
 
-    <!-- Calm Ambient Piano Audio Track -->
+    <!-- AUDIO SOUND EFFECTS & BACKGROUND MUSIC -->
     <audio id="bgMusic" loop preload="auto">
         <source src="https://cdn.pixabay.com/download/audio/2022/11/06/audio_c97690fa8b.mp3?filename=soft-relaxing-piano-126237.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Sound Effect 1: Send / Submit Chime -->
+    <audio id="sfxSubmit" preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_c8c8a73467.mp3?filename=success-fanfare-trumpets-6185.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Sound Effect 2: Virtual Hug / Kiss Burst -->
+    <audio id="sfxBurst" preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=magic-sparkle-190030.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Sound Effect 3: Button Click -->
+    <audio id="sfxClick" preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c3c3a10526.mp3?filename=pop-39222.mp3" type="audio/mpeg">
     </audio>
 
     <!-- LANDING SCREEN WITH PROFILE SELECTION -->
@@ -372,7 +387,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- 2. GLOBAL APP STATE & FIXED START DATE ---
+        // --- 2. GLOBAL APP STATE & EXACT START DATE (NOV 29, 2024 @ 4:00 PM) ---
         const START_DATE = new Date('2024-11-29T16:00:00');
         let activeUser = "Dean"; 
         let partnerUser = "Phoebe";
@@ -384,7 +399,16 @@
             qaHistory: []
         };
 
-        // --- 3. REALTIME DATABASE SYNC LISTENERS ---
+        // --- 3. HELPER FUNCTION TO PLAY SOUND EFFECTS ---
+        function playSFX(elementId) {
+            const sound = document.getElementById(elementId);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("SFX autoplay blocked: ", e));
+            }
+        }
+
+        // --- 4. REALTIME DATABASE SYNC LISTENERS ---
         function attachFirebaseListeners() {
             db.ref("sanctuary_data").on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -407,6 +431,7 @@
         }
 
         function selectUser(userName) {
+            playSFX('sfxClick');
             activeUser = userName;
             partnerUser = userName === "Dean" ? "Phoebe" : "Dean";
 
@@ -416,6 +441,7 @@
         }
 
         function switchUserRole() {
+            playSFX('sfxClick');
             document.getElementById('mainApp').classList.add('opacity-0');
             setTimeout(() => {
                 document.getElementById('mainApp').classList.add('hidden');
@@ -448,6 +474,7 @@
         }
 
         function unlockApp() {
+            playSFX('sfxClick');
             attachFirebaseListeners();
 
             document.getElementById('coupleTitle').innerText = "Dean & Phoebe";
@@ -471,7 +498,7 @@
             const myInfo = appData[activeUser] || { answer: "", note: "", mood: "" };
             const partnerInfo = appData[partnerUser] || { answer: "", note: "", mood: "" };
 
-            // 1. Update Notes State & Lock behavior
+            // 1. Update Notes State
             const noteInput = document.getElementById('myDailyNoteInput');
             const noteFormContainer = document.getElementById('noteFormContainer');
             const noteSentNotice = document.getElementById('noteSentNotice');
@@ -489,11 +516,10 @@
 
             document.getElementById('partnerDailyNoteText').innerText = partnerInfo.note ? `"${partnerInfo.note}"` : `Waiting for ${partnerUser}'s daily note...`;
 
-            // 2. Update Mood State
+            // 2. Update Partner Mood State & Emoji
             const partnerMoodText = partnerInfo.mood || "Missing you extra 💖";
             document.getElementById('partnerMoodStatus').innerText = partnerMoodText;
-            
-            // Extract the emoji (first character/symbol) to display in the circle icon
+
             const extractedEmoji = partnerMoodText.match(/\p{Extended_Pictographic}/u);
             if (extractedEmoji) {
                 document.getElementById('partnerMoodEmoji').innerText = extractedEmoji[0];
@@ -510,6 +536,7 @@
             const input = document.getElementById('myAnswerInput');
             if (!input.value.trim()) return;
             
+            playSFX('sfxSubmit');
             if (!appData[activeUser]) appData[activeUser] = {};
             appData[activeUser].answer = input.value.trim();
             pushDataToCloud();
@@ -517,7 +544,6 @@
         }
 
         function updateQADisplay(myAns, partnerAns) {
-            // User 1 Status
             if (myAns) {
                 document.getElementById('answerText1').innerText = `"${myAns}"`;
                 document.getElementById('statusBadge1').innerText = "Submitted";
@@ -528,7 +554,6 @@
                 document.getElementById('statusBadge1').className = "text-[10px] bg-roseGold/20 text-roseGold px-2 py-0.5 rounded-full";
             }
 
-            // User 2 Status
             if (partnerAns) {
                 document.getElementById('statusBadge2').innerText = "Submitted";
                 document.getElementById('statusBadge2').className = "text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full";
@@ -605,6 +630,7 @@
         }
 
         function toggleQVault() {
+            playSFX('sfxClick');
             document.getElementById('qVaultList').classList.toggle('hidden');
         }
 
@@ -612,6 +638,7 @@
             const input = document.getElementById('myDailyNoteInput');
             if (!input.value.trim()) return;
 
+            playSFX('sfxSubmit');
             if (!appData[activeUser]) appData[activeUser] = {};
             appData[activeUser].note = input.value.trim();
             pushDataToCloud();
@@ -619,28 +646,23 @@
         }
 
         function setMood(mood) {
+            playSFX('sfxClick');
             if (!appData[activeUser]) appData[activeUser] = {};
-    
-            // Extracts the emoji and full text string
             appData[activeUser].mood = mood;
-    
-            // Save to Firebase
             pushDataToCloud();
-    
-            // Trigger confetti animation on your screen
             sendInstantBurst('mood');
         }
 
-            function sendInstantBurst(type) {
-        // Send real-time burst event to Firebase
-        db.ref("realtime_burst").set({
-            type: type,
-            sender: activeUser,
-            timestamp: Date.now()
-        });
-    }
+        function sendInstantBurst(type) {
+            db.ref("realtime_burst").set({
+                type: type,
+                sender: activeUser,
+                timestamp: Date.now()
+            });
+        }
 
         function triggerBurstFX() {
+            playSFX('sfxBurst');
             confetti({ particleCount: 50, spread: 80, origin: { y: 0.5 } });
         }
 
@@ -654,6 +676,7 @@
         }
 
         function switchTab(tabId) {
+            playSFX('sfxClick');
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('bg-white/10', 'text-white');
